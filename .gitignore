@@ -1,0 +1,10 @@
+.DS_Store
+.idea
+*.log
+tmp/
+
+*.o
+allocate
+
+# Ignore ccls-cache
+.ccls-cache/
