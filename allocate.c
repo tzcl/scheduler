@@ -5,6 +5,12 @@
 #include <unistd.h>
 
 int main(int argc, char **argv) {
+  /* Parse arguments
+   * ---------------
+   * Allowed flags:
+   *   -f filename: specify the name of the file describing the processes.
+   *   -p processors: specifies the number of processors, where 1 <= N <= 1024
+   *   -c: an optional parameter which invokes custom scheduler */
   bool use_custom_scheduler = false;
   int num_processors = 0;
   char *filename = NULL;
