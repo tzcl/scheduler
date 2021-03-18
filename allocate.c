@@ -1,16 +1,17 @@
-#include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "process.h"
+
 int main(int argc, char **argv) {
   /* Parse arguments
    * ---------------
    * Allowed flags:
-   *   -f filename: specify the name of the file describing the processes.
+   *   -f filename: specify the name of the file describing the processes
    *   -p processors: specifies the number of processors, where 1 <= N <= 1024
-   *   -c: an optional parameter which invokes custom scheduler */
+   *   -c: an optional parameter which invokes my custom scheduler */
   bool use_custom_scheduler = false;
   int num_processors = 0;
   char *filename = NULL;
@@ -37,14 +38,16 @@ int main(int argc, char **argv) {
   }
 
   FILE *processes_file;
-  if ((processes_file = fopen(filename, "r")) == NULL) {
+  if (!(processes_file = fopen(filename, "r"))) {
     fprintf(stderr, "Error opening file %s!\n", filename);
     exit(EXIT_FAILURE);
   }
 
   char buf[100];
+  Process process;
   while ((buf == fgets(buf, 100, processes_file))) {
-    printf("%s", buf);
+    init_process(&process, &buf[0]);
+    print_process(&process);
   }
 
   fclose(processes_file);

@@ -4,10 +4,16 @@
 # @file
 # @version 0.1
 
-allocate: allocate.c
-	gcc -o allocate allocate.c
+allocate: allocate.o process.o 
+	gcc -o allocate allocate.o process.o -Wall
+
+allocate.o: allocate.c process.o
+	gcc -c allocate.c
+
+process.o: process.c process.h
+	gcc -c process.c
 
 clean:
-	rm *.o allocate
+	rm allocate *.o
 
 # end
