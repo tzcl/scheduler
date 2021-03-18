@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 int main(int argc, char **argv) {
-  bool custom_scheduler = false;
+  bool use_custom_scheduler = false;
   int num_processors = 0;
   char *filename = NULL;
 
@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
       num_processors = atoi(optarg);
       break;
     case 'c':
-      custom_scheduler = true;
+      use_custom_scheduler = true;
       break;
     case '?':
       fprintf(stderr, "Usage: %s -%c requires an argument!\n", argv[0], optopt);
@@ -30,8 +30,18 @@ int main(int argc, char **argv) {
     }
   }
 
-  printf("filename: %s, num_processors: %d, flag c: %s\n", filename,
-         num_processors, custom_scheduler ? "true" : "false");
+  FILE *processes_file;
+  if ((processes_file = fopen(filename, "r")) == NULL) {
+    fprintf(stderr, "Error opening file %s!\n", filename);
+    exit(EXIT_FAILURE);
+  }
+
+  char buf[100];
+  while ((buf == fgets(buf, 100, processes_file))) {
+    printf("%s", buf);
+  }
+
+  fclose(processes_file);
 
   return 0;
 }
