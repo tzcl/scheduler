@@ -37,18 +37,48 @@ int main(int argc, char **argv) {
     }
   }
 
+  /* Open the processes file  */
   FILE *processes_file;
+  if (!filename) {
+    fprintf(stderr, "Path to processes file missing!\n");
+    exit(EXIT_FAILURE);
+  }
   if (!(processes_file = fopen(filename, "r"))) {
     fprintf(stderr, "Error opening file %s!\n", filename);
     exit(EXIT_FAILURE);
   }
 
   char buf[100];
-  Process process;
-  while ((buf == fgets(buf, 100, processes_file))) {
-    init_process(&process, &buf[0]);
-    print_process(&process);
-  }
+  /* Process process; */
+  /* while ((buf == fgets(buf, 100, processes_file))) { */
+  /*   init_process(&process, &buf[0]); */
+  /*   print_process(&process); */
+  /* } */
+
+  PriorityQueue *queue = new_queue();
+  fgets(buf, 100, processes_file);
+  Process *process = new_process(&buf[0]);
+  print_process(process);
+
+  fgets(buf, 100, processes_file);
+  Process *process2 = new_process(&buf[0]);
+  print_process(process2);
+
+  fgets(buf, 100, processes_file);
+  Process *process3 = new_process(&buf[0]);
+  print_process(process3);
+
+  push_queue(queue, process);
+  printf("top: %d, %d\n", top_queue(queue)->id, queue->size);
+
+  push_queue(queue, process2);
+  push_queue(queue, process3);
+  printf("top now: %d, %d\n", top_queue(queue)->id, queue->size);
+
+  /* pop_queue(queue); */
+  /* pop_queue(queue); */
+  /* pop_queue(queue); */
+  free_queue(queue);
 
   fclose(processes_file);
 
