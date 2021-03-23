@@ -19,6 +19,20 @@ Process *new_process(char *line) {
 }
 
 /**
+ * Initialises a process by copying the values from another process */
+Process *copy_process(Process *other) {
+  Process *process = (Process *)malloc(sizeof(Process));
+
+  process->id = other->id;
+  process->arrival = other->arrival;
+  process->execution_time = other->execution_time;
+  process->remaining_time = other->execution_time;
+  process->parallelisable = other->parallelisable;
+
+  return process;
+}
+
+/**
  * Set the data members of a process using a line from the file
  * describing the processes. The line must be of the form:
  * (time-arrived, process-id, execution-time, parallelisable).

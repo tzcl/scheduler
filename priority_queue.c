@@ -33,7 +33,7 @@ void free_queue(PriorityQueue *queue) {
  * Initialises the data members of a new Node and allocates memory */
 Node *new_node(Process *process) {
   Node *node = (Node *)malloc(sizeof(Node));
-  node->process = process;
+  node->process = copy_process(process);
   node->next = NULL;
 
   return node;
@@ -78,8 +78,6 @@ void push_queue(PriorityQueue *queue, Process *process) {
     /* See if the new node should go at the front of the queue */
     Node *curr = queue->root;
     if (higher_node_priority(new, curr)) {
-      printf("%d has lower priority than %d\n", new->process->execution_time,
-             curr->process->execution_time);
       queue->root = new;
       new->next = curr;
     } else {
