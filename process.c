@@ -49,11 +49,11 @@ void free_process(Process *process) { free(process); }
  *
  * Returns true if p1 has higher priority than p2 and vice versa. */
 bool higher_priority(Process *p1, Process *p2) {
-  if (p1->execution_time < p2->execution_time) {
-    return true;
+  if (p1->execution_time == p2->execution_time) {
+    return p1->id < p2->id;
   }
 
-  return p1->id < p2->execution_time;
+  return p1->execution_time < p2->execution_time;
 }
 
 // TODO: delete
