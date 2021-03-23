@@ -9,7 +9,21 @@
  * describing the processes. The line must be of the form:
  * (time-arrived, process-id, execution-time, parallelisable).
  *
- *   process: a pointer to the process to initialise
+ *   line: a string of the form specified above
+ *  */
+Process *new_process(char *line) {
+  Process *process = (Process *)malloc(sizeof(Process));
+  init_process(process, line);
+
+  return process;
+}
+
+/**
+ * Set the data members of a process using a line from the file
+ * describing the processes. The line must be of the form:
+ * (time-arrived, process-id, execution-time, parallelisable).
+ *
+ *   process: a pointer to the process to write values to
  *   line: a string of the form specified above
  *  */
 void init_process(Process *process, char *line) {
@@ -23,6 +37,23 @@ void init_process(Process *process, char *line) {
   process->execution_time = execution_time;
   process->remaining_time = execution_time;
   process->parallelisable = *parallelisable == 'p';
+}
+
+/**
+ * Frees the memory associated with a process */
+void free_process(Process *process) { free(process); }
+
+/**
+ * Compares two processes, p1 and p2. A process has higher priority if it has a
+ * lower execution time or lower id if the execution times are equal.
+ *
+ * Returns true if p1 has higher priority than p2 and vice versa. */
+bool higher_priority(Process *p1, Process *p2) {
+  if (p1->execution_time < p2->execution_time) {
+    return true;
+  }
+
+  return p1->id < p2->execution_time;
 }
 
 // TODO: delete
