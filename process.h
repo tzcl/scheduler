@@ -2,6 +2,7 @@
 #define __PROCESS_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 /**
  * Stores information about a process.
@@ -14,11 +15,12 @@
  *   parallelisable: whether the process can be parallelised or not
  *  */
 typedef struct process {
-  unsigned int id;
-  unsigned int start_time;
-  unsigned int execution_time;
-  unsigned int remaining_time;
-  unsigned int end_time;
+  uint32_t id;
+  uint32_t arrival;
+  uint32_t execution_time;
+  uint32_t remaining_time;
+  uint32_t start_time;
+  uint32_t end_time;
   bool parallelisable;
 } Process;
 

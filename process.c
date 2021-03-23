@@ -41,13 +41,13 @@ Process *copy_process(Process *other) {
  *   line: a string of the form specified above
  *  */
 void init_process(Process *process, char *line) {
-  int start_time = atoi(strtok(line, " "));
-  int id = atoi(strtok(NULL, " "));
-  int execution_time = atoi(strtok(NULL, " "));
+  uint32_t arrival = strtoul(strtok(line, " "), NULL, 10);
+  uint32_t id = strtoul(strtok(NULL, " "), NULL, 10);
+  uint32_t execution_time = strtoul(strtok(NULL, " "), NULL, 10);
   char *parallelisable = strtok(NULL, " ");
 
   process->id = id;
-  process->start_time = start_time;
+  process->arrival = arrival;
   process->execution_time = execution_time;
   process->remaining_time = execution_time;
   process->parallelisable = *parallelisable == 'p';
