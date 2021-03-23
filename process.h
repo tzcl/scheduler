@@ -14,11 +14,11 @@
  *   parallelisable: whether the process can be parallelised or not
  *  */
 typedef struct process {
-  int id;
-  int start_time;
-  int execution_time;
-  int remaining_time;
-  int end_time;
+  unsigned int id;
+  unsigned int start_time;
+  unsigned int execution_time;
+  unsigned int remaining_time;
+  unsigned int end_time;
   bool parallelisable;
 } Process;
 
