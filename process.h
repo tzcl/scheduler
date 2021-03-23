@@ -5,6 +5,10 @@
 #include <stdint.h>
 
 /**
+ * Times can be in the range [0, 2^32) */
+typedef uint32_t Time;
+
+/**
  * Stores information about a process.
  *
  *   id: the process id
@@ -16,11 +20,11 @@
  *  */
 typedef struct process {
   uint32_t id;
-  uint32_t arrival;
-  uint32_t execution_time;
-  uint32_t remaining_time;
-  uint32_t start_time;
-  uint32_t end_time;
+  Time arrival;
+  Time execution_time;
+  Time remaining_time;
+  Time start_time;
+  Time end_time;
   bool parallelisable;
 } Process;
 

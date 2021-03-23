@@ -41,9 +41,9 @@ Process *copy_process(Process *other) {
  *   line: a string of the form specified above
  *  */
 void init_process(Process *process, char *line) {
-  uint32_t arrival = strtoul(strtok(line, " "), NULL, 10);
+  Time arrival = strtoul(strtok(line, " "), NULL, 10);
   uint32_t id = strtoul(strtok(NULL, " "), NULL, 10);
-  uint32_t execution_time = strtoul(strtok(NULL, " "), NULL, 10);
+  Time execution_time = strtoul(strtok(NULL, " "), NULL, 10);
   char *parallelisable = strtok(NULL, " ");
 
   process->id = id;
