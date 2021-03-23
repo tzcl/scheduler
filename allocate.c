@@ -1,9 +1,9 @@
+#include "priority_queue.h"
+#include "process.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-#include "process.h"
 
 int main(int argc, char **argv) {
   /* Parse arguments
