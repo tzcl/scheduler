@@ -78,6 +78,8 @@ void push_queue(PriorityQueue *queue, Process *process) {
     /* See if the new node should go at the front of the queue */
     Node *curr = queue->root;
     if (higher_node_priority(new, curr)) {
+      printf("%d has lower priority than %d\n", new->process->execution_time,
+             curr->process->execution_time);
       queue->root = new;
       new->next = curr;
     } else {
@@ -101,4 +103,16 @@ void pop_queue(PriorityQueue *queue) {
   free_node(queue->root);
   queue->root = next;
   queue->size--;
+}
+
+// TODO: delete
+void print_queue(PriorityQueue *queue) {
+  Node *curr = queue->root;
+
+  while (curr) {
+    printf("%d: %d; ", curr->process->id, curr->process->execution_time);
+    curr = curr->next;
+  }
+
+  printf("\n");
 }
