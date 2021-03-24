@@ -5,9 +5,9 @@
 # @version 0.1
 
 allocate: allocate.o process.o priority_queue.o
-	gcc -o allocate allocate.o process.o priority_queue.o -Wall
+	gcc -o allocate allocate.o process.o priority_queue.o -Wall -lm
 
-allocate.o: allocate.c process.o
+allocate.o: allocate.c process.o priority_queue.o
 	gcc -c allocate.c
 
 process.o: process.c process.h
