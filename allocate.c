@@ -1,9 +1,31 @@
 #include "priority_queue.h"
 #include "process.h"
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+#define MAX_LEN 100
+
+/**
+ * Reads the next process into the given buffer. Returns true if there are any
+ * errors.
+ *
+ *  processes_file: a pointer to the processes file
+ *  process: the variable to store the process in */
+bool read_next_process(FILE *processes_file, Process *process);
+
+/**
+ * Changes the pointer to the active process and stores the data of that
+ * process.
+ *
+ *  active_process: a pointer to the active process
+ *  curr_process: container for the data of the active process
+ *  next_process: the data of the next process
+ *  time: the current time of the simulation */
+bool change_process(Process **active_process, Process *curr_process,
+                    Process *next_process, Time time);
 
 int main(int argc, char **argv) {
   /* Parse arguments
@@ -48,39 +70,127 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  char buf[100];
-  /* Process process; */
-  /* while ((buf == fgets(buf, 100, processes_file))) { */
-  /*   init_process(&process, &buf[0]); */
-  /*   print_process(&process); */
-  /* } */
+  /* tracks whether we've seen all processes in the file */
+  bool more_processes = true;
+  bool changed_process = false;
+  Time time = 0; /* time of the simulation */
+
+  /* performance statistics */
+  unsigned long num_processes = 0;
+  double avg_turnaround = 0;
+  double avg_overhead = 0;
+  double max_overhead = 0;
 
   PriorityQueue *queue = new_queue();
-  fgets(buf, 100, processes_file);
-  Process *process = new_process(&buf[0]);
-  print_process(process);
 
-  fgets(buf, 100, processes_file);
-  Process *process2 = new_process(&buf[0]);
-  print_process(process2);
+  /* need to be able to tell if active_process is set to anything
+   * idea: allocate memory for all processes, change new_node to just copy the
+   * pointer and make active_process point to a process */
+  Process *active_process = NULL;
+  Process curr_process, next_process;
+  more_processes = read_next_process(processes_file, &next_process);
 
-  fgets(buf, 100, processes_file);
-  Process *process3 = new_process(&buf[0]);
-  print_process(process3);
+  while (more_processes || active_process) {
+    /* process arrives */
+    while (more_processes && time == next_process.arrival) {
+      if (active_process) {
+        if (higher_priority(&next_process, active_process)) {
+          /* copy the active process into the queue */
+          push_queue(queue, active_process);
 
-  push_queue(queue, process);
-  printf("top: %d, %d\n", top_queue(queue)->id, queue->size);
+          /* make the new process active */
+          changed_process = change_process(&active_process, &curr_process,
+                                           &next_process, time);
+        } else {
+          push_queue(queue, &next_process);
+        }
+      } else {
+        /* make the new process active */
+        changed_process =
+            change_process(&active_process, &curr_process, &next_process, time);
+      }
 
-  push_queue(queue, process2);
-  push_queue(queue, process3);
-  printf("top now: %d, %d\n", top_queue(queue)->id, queue->size);
+      more_processes = read_next_process(processes_file, &next_process);
+    }
 
-  /* pop_queue(queue); */
-  /* pop_queue(queue); */
-  /* pop_queue(queue); */
+    if (changed_process) {
+      printf("%d,RUNNING,pid=%d,remaining_time=%d,cpu=%d\n", time,
+             active_process->id, active_process->remaining_time, 0);
+      changed_process = false;
+    }
+
+    time++;
+
+    if (active_process) {
+      active_process->remaining_time--;
+
+      if (active_process->remaining_time == 0) {
+        /* process is finished */
+        printf("%d,FINISHED,pid=%d,proc_remaining=%lu\n", time,
+               active_process->id, queue->size);
+
+        num_processes++;
+        unsigned long turnaround = time - active_process->arrival;
+        double overhead = turnaround / (double)active_process->execution_time;
+
+        avg_turnaround += (turnaround - avg_turnaround) / num_processes;
+        avg_overhead += (overhead - avg_overhead) / num_processes;
+        if (overhead > max_overhead)
+          max_overhead = overhead;
+
+        /* swap active_process to whatever is next */
+        if (!empty_queue(queue)) {
+          /* How am I going to store whatever is at the top of the queue? */
+          changed_process = change_process(&active_process, &curr_process,
+                                           top_queue(queue), time);
+          pop_queue(queue);
+        } else {
+          active_process = NULL;
+        }
+      }
+    }
+  }
+
+  /* round off overhead statistics */
+  avg_overhead = round(avg_overhead * 100) / 100;
+  max_overhead = round(max_overhead * 100) / 100;
+
+  printf("Turnaround time %g\n", round(avg_turnaround));
+  printf("Time overhead %g %g\n", max_overhead, avg_overhead);
+  printf("Makespan %d\n", time);
+
   free_queue(queue);
-
   fclose(processes_file);
 
   return 0;
+}
+
+/**
+ * Reads the next process into the given buffer. Returns true if there are any
+ * errors.
+ *
+ *  processes_file: a pointer to the processes file
+ *  process: the variable to store the process in */
+bool read_next_process(FILE *processes_file, Process *process) {
+  char buffer[MAX_LEN];
+  if ((buffer != fgets(buffer, MAX_LEN, processes_file))) {
+    return false;
+  }
+  init_process(process, &buffer[0]);
+  return true;
+}
+
+/**
+ * Changes the pointer to the active process and stores the data of that
+ * process.
+ *
+ *  active_process: a pointer to the active process
+ *  curr_process: container for the data of the active process
+ *  next_process: the data of the next process */
+bool change_process(Process **active_process, Process *curr_process,
+                    Process *next_process, Time time) {
+  store_process(next_process, curr_process);
+  curr_process->start_time = time;
+  *active_process = curr_process;
+  return true;
 }

@@ -23,7 +23,7 @@ typedef struct node Node;
  *   root: the root element of the queue
  *  */
 typedef struct {
-  int size;
+  unsigned long int size;
   Node *root;
 } PriorityQueue;
 

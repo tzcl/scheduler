@@ -14,7 +14,6 @@
 Process *new_process(char *line) {
   Process *process = (Process *)malloc(sizeof(Process));
   init_process(process, line);
-
   return process;
 }
 
@@ -22,13 +21,7 @@ Process *new_process(char *line) {
  * Initialises a process by copying the values from another process */
 Process *copy_process(Process *other) {
   Process *process = (Process *)malloc(sizeof(Process));
-
-  process->id = other->id;
-  process->arrival = other->arrival;
-  process->execution_time = other->execution_time;
-  process->remaining_time = other->execution_time;
-  process->parallelisable = other->parallelisable;
-
+  store_process(other, process);
   return process;
 }
 
@@ -54,20 +47,33 @@ void init_process(Process *process, char *line) {
 }
 
 /**
+ * Stores the values of one process in another process.
+ *
+ *  src: the process to read from
+ *  dst: the process to write to */
+void store_process(Process *src, Process *dst) {
+  dst->id = src->id;
+  dst->arrival = src->arrival;
+  dst->execution_time = src->execution_time;
+  dst->remaining_time = src->remaining_time;
+  dst->parallelisable = src->parallelisable;
+}
+
+/**
  * Frees the memory associated with a process */
 void free_process(Process *process) { free(process); }
 
 /**
- * Compares two processes, p1 and p2. A process has higher priority if it has a
- * lower execution time or lower id if the execution times are equal.
+ * Compares two processes, p1 and p2. A process has higher priority if it has
+ * remaining time or lower id if the remaining times are equal.
  *
  * Returns true if p1 has higher priority than p2 and vice versa. */
 bool higher_priority(Process *p1, Process *p2) {
-  if (p1->execution_time == p2->execution_time) {
+  if (p1->remaining_time == p2->remaining_time) {
     return p1->id < p2->id;
   }
 
-  return p1->execution_time < p2->execution_time;
+  return p1->remaining_time < p2->remaining_time;
 }
 
 // TODO: delete
