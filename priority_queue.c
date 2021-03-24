@@ -82,9 +82,10 @@ void push_queue(PriorityQueue *queue, Process *process) {
       new->next = curr;
     } else {
       /* Iterate through nodes until a node has lower priority than new */
-      while (curr->next && higher_node_priority(curr, new)) {
+      while (curr->next && higher_node_priority(curr->next, new)) {
         curr = curr->next;
       }
+
       /* Insert the new node */
       new->next = curr->next;
       curr->next = new;
@@ -108,7 +109,7 @@ void print_queue(PriorityQueue *queue) {
   Node *curr = queue->root;
 
   while (curr) {
-    printf("%d: %d; ", curr->process->id, curr->process->execution_time);
+    printf("%d: %d; ", curr->process->id, curr->process->remaining_time);
     curr = curr->next;
   }
 
