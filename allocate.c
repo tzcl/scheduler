@@ -1,3 +1,4 @@
+#include "cpu.h"
 #include "priority_queue.h"
 #include "process.h"
 #include <math.h>
@@ -16,17 +17,6 @@
  *  process: the variable to store the process in */
 bool read_next_process(FILE *processes_file, Process *process);
 
-/**
- * Changes the pointer to the active process and stores the data of that
- * process.
- *
- *  active_process: a pointer to the active process
- *  curr_process: container for the data of the active process
- *  next_process: the data of the next process
- *  time: the current time of the simulation */
-bool change_process(Process **active_process, Process *curr_process,
-                    Process *next_process, Time time);
-
 int main(int argc, char **argv) {
   /* Parse arguments
    * ---------------
@@ -35,7 +25,7 @@ int main(int argc, char **argv) {
    *   -p processors: specifies the number of processors, where 1 <= N <= 1024
    *   -c: an optional parameter which invokes my custom scheduler */
   bool use_custom_scheduler = false;
-  int num_processors = 0;
+  int num_cpus = 0;
   char *filename = NULL;
 
   int opt;
@@ -45,7 +35,7 @@ int main(int argc, char **argv) {
       filename = optarg;
       break;
     case 'p':
-      num_processors = atoi(optarg);
+      num_cpus = atoi(optarg);
       break;
     case 'c':
       use_custom_scheduler = true;
@@ -72,82 +62,101 @@ int main(int argc, char **argv) {
 
   /* tracks whether we've seen all processes in the file */
   bool more_processes = true;
-  bool changed_process = false;
-  Time time = 0; /* time of the simulation */
+  uint32_t proc_left = 0;
+  Time time = 0;
 
   /* performance statistics */
-  unsigned long num_processes = 0;
+  uint32_t num_processes = 0;
   double avg_turnaround = 0;
   double avg_overhead = 0;
   double max_overhead = 0;
 
-  PriorityQueue *queue = new_queue();
+  /* create CPUs */
+  CPU *cpu0 = new_cpu(0);
+  CPU *cpu1 = new_cpu(1);
+  /* will need this eventually */
+  /* CPU cpus[num_processors];  */
 
-  /* need to be able to tell if active_process is set to anything
-   * idea: allocate memory for all processes, change new_node to just copy the
-   * pointer and make active_process point to a process */
-  Process *active_process = NULL;
-  Process curr_process, next_process;
+  Process next_process;
   more_processes = read_next_process(processes_file, &next_process);
 
-  while (more_processes || active_process) {
+  while (more_processes || cpu0->active_process || cpu1->active_process) {
     /* process arrives */
     while (more_processes && time == next_process.arrival) {
-      if (active_process) {
-        if (higher_priority(&next_process, active_process)) {
-          /* copy the active process into the queue */
-          push_queue(queue, active_process);
-
-          /* make the new process active */
-          changed_process = change_process(&active_process, &curr_process,
-                                           &next_process, time);
-        } else {
-          push_queue(queue, &next_process);
-        }
+      if (cpu0->remaining_time <= cpu1->remaining_time) {
+        give_process(cpu0, &next_process, time);
       } else {
-        /* make the new process active */
-        changed_process =
-            change_process(&active_process, &curr_process, &next_process, time);
+        give_process(cpu1, &next_process, time);
       }
 
+      proc_left++;
+
+      /* read in the next process */
       more_processes = read_next_process(processes_file, &next_process);
     }
 
-    if (changed_process) {
+    /* Update this to run on an array of CPUs */
+    /* This should be its own function */
+    if (cpu0->changed_process) {
       printf("%d,RUNNING,pid=%d,remaining_time=%d,cpu=%d\n", time,
-             active_process->id, active_process->remaining_time, 0);
-      changed_process = false;
+             cpu0->active_process->id, cpu0->active_process->remaining_time,
+             cpu0->id);
+      cpu0->changed_process = false;
+    }
+    if (cpu1->changed_process) {
+      printf("%d,RUNNING,pid=%d,remaining_time=%d,cpu=%d\n", time,
+             cpu1->active_process->id, cpu1->active_process->remaining_time,
+             cpu1->id);
+      cpu1->changed_process = false;
     }
 
     time++;
 
-    if (active_process) {
-      active_process->remaining_time--;
+    update_cpu(cpu0);
+    update_cpu(cpu1);
 
-      if (active_process->remaining_time == 0) {
-        /* process is finished */
-        printf("%d,FINISHED,pid=%d,proc_remaining=%lu\n", time,
-               active_process->id, queue->size);
+    if (cpu0->finished_process) {
+      printf("%d,FINISHED,pid=%d,proc_remaining=%u\n", time,
+             cpu0->active_process->id, proc_left - 1);
+      /* not cpu->queue! should print the total processes left */
 
-        num_processes++;
-        unsigned long turnaround = time - active_process->arrival;
-        double overhead = turnaround / (double)active_process->execution_time;
+      proc_left--;
 
-        avg_turnaround += (turnaround - avg_turnaround) / num_processes;
-        avg_overhead += (overhead - avg_overhead) / num_processes;
-        if (overhead > max_overhead)
-          max_overhead = overhead;
+      /* calculate performance statistics! */
+      num_processes++;
+      unsigned long turnaround = time - cpu0->active_process->arrival;
+      double overhead =
+          turnaround / (double)cpu0->active_process->execution_time;
 
-        /* swap active_process to whatever is next */
-        if (!empty_queue(queue)) {
-          /* How am I going to store whatever is at the top of the queue? */
-          changed_process = change_process(&active_process, &curr_process,
-                                           top_queue(queue), time);
-          pop_queue(queue);
-        } else {
-          active_process = NULL;
-        }
-      }
+      avg_turnaround += (turnaround - avg_turnaround) / num_processes;
+      avg_overhead += (overhead - avg_overhead) / num_processes;
+      if (overhead > max_overhead)
+        max_overhead = overhead;
+
+      cpu_next_process(cpu0, time);
+
+      cpu0->finished_process = false;
+    }
+    if (cpu1->finished_process) {
+      printf("%d,FINISHED,pid=%u,proc_remaining=%u\n", time,
+             cpu1->active_process->id, proc_left - 1);
+
+      proc_left--;
+
+      /* calculate performance statistics */
+      /* how to track parallelised processes??? */
+      num_processes++;
+      unsigned long turnaround = time - cpu1->active_process->arrival;
+      double overhead =
+          turnaround / (double)cpu1->active_process->execution_time;
+
+      avg_turnaround += (turnaround - avg_turnaround) / num_processes;
+      avg_overhead += (overhead - avg_overhead) / num_processes;
+      if (overhead > max_overhead)
+        max_overhead = overhead;
+
+      cpu_next_process(cpu1, time);
+      cpu1->finished_process = false;
     }
   }
 
@@ -159,7 +168,8 @@ int main(int argc, char **argv) {
   printf("Time overhead %g %g\n", max_overhead, avg_overhead);
   printf("Makespan %d\n", time);
 
-  free_queue(queue);
+  free_cpu(cpu0);
+  free_cpu(cpu1);
   fclose(processes_file);
 
   return 0;
@@ -177,20 +187,5 @@ bool read_next_process(FILE *processes_file, Process *process) {
     return false;
   }
   init_process(process, &buffer[0]);
-  return true;
-}
-
-/**
- * Changes the pointer to the active process and stores the data of that
- * process.
- *
- *  active_process: a pointer to the active process
- *  curr_process: container for the data of the active process
- *  next_process: the data of the next process */
-bool change_process(Process **active_process, Process *curr_process,
-                    Process *next_process, Time time) {
-  store_process(next_process, curr_process);
-  curr_process->start_time = time;
-  *active_process = curr_process;
   return true;
 }
