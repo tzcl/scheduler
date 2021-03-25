@@ -18,7 +18,7 @@ typedef uint32_t Time;
  *   end_time: when the process finished
  *   parallelisable: whether the process can be parallelised or not
  *  */
-typedef struct process {
+typedef struct {
   uint32_t id;
   Time arrival;
   Time execution_time;
@@ -33,14 +33,14 @@ typedef struct process {
  * describing the processes. The line must be of the form:
  * (time-arrived, process-id, execution-time, parallelisable).
  *
- *   process: a pointer to the process to initialise
  *   line: a string of the form specified above
  *  */
 Process *new_process(char *line);
 
 /**
- * Initialises a process by copying the values from another process */
+ * Initialises a process by copying the values from another process. */
 Process *copy_process(Process *other);
+
 /**
  * Set the data members of a process using a line from the file
  * describing the processes. The line must be of the form:
@@ -59,7 +59,7 @@ void init_process(Process *process, char *line);
 void store_process(Process *src, Process *dst);
 
 /**
- * Frees the memory associated with a process */
+ * Frees the memory associated with a process. */
 void free_process(Process *process);
 
 /**

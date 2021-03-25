@@ -3,6 +3,7 @@
 
 #include "process.h"
 #include <stdbool.h>
+#include <stdint.h>
 
 /**
  * A node in the priority queue.
@@ -23,12 +24,12 @@ typedef struct node Node;
  *   root: the root element of the queue
  *  */
 typedef struct {
-  unsigned long int size;
+  uint32_t size;
   Node *root;
 } PriorityQueue;
 
 /**
- * Initialises the data members of a new queue and allocates memory
+ * Initialises the data members of a new queue and allocates memory.
  * */
 PriorityQueue *new_queue();
 
@@ -37,27 +38,28 @@ PriorityQueue *new_queue();
 void free_queue(PriorityQueue *queue);
 
 /**
- * Initialises the data members of a new node and allocates memory */
+ * Initialises the data members of a new node and allocates memory. */
 Node *new_node(Process *process);
 
 /**
- * Frees the memory associated with a node */
+ * Frees the memory associated with a node. Also frees the associated process.
+ */
 void free_node(Node *node);
 
 /**
- * Checks whether a queue is empty */
+ * Checks whether a queue is empty. */
 bool empty_queue(PriorityQueue *queue);
 
 /**
- * Returns the top node of the queue */
+ * Returns the top node of the queue. */
 Process *top_queue(PriorityQueue *queue);
 
 /**
- * Adds a new node to the queue */
+ * Adds a new node to the queue. */
 void push_queue(PriorityQueue *queue, Process *process);
 
 /**
- * Removes the top node from the queue */
+ * Removes the top node from the queue. */
 void pop_queue(PriorityQueue *queue);
 
 // TODO: delete

@@ -18,7 +18,7 @@ Process *new_process(char *line) {
 }
 
 /**
- * Initialises a process by copying the values from another process */
+ * Initialises a process by copying the values from another process. */
 Process *copy_process(Process *other) {
   Process *process = (Process *)malloc(sizeof(Process));
   store_process(other, process);
@@ -60,7 +60,7 @@ void store_process(Process *src, Process *dst) {
 }
 
 /**
- * Frees the memory associated with a process */
+ * Frees the memory associated with a process. */
 void free_process(Process *process) { free(process); }
 
 /**

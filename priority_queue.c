@@ -8,14 +8,14 @@
  * */
 PriorityQueue *new_queue() {
   PriorityQueue *queue = (PriorityQueue *)malloc(sizeof(PriorityQueue));
-  queue->size = 0;
   queue->root = NULL;
+  queue->size = 0;
 
   return queue;
 }
 
 /**
- * Frees the memory associated with a queue */
+ * Frees the memory associated with a queue. */
 void free_queue(PriorityQueue *queue) {
   Node *next_node;
   Node *curr = queue->root;
@@ -30,7 +30,7 @@ void free_queue(PriorityQueue *queue) {
 }
 
 /**
- * Initialises the data members of a new Node and allocates memory */
+ * Initialises the data members of a new Node and allocates memory. */
 Node *new_node(Process *process) {
   Node *node = (Node *)malloc(sizeof(Node));
   node->process = copy_process(process);
@@ -40,7 +40,7 @@ Node *new_node(Process *process) {
 }
 
 /**
- * Frees the memory associated with a Node. Also frees the associated Process.
+ * Frees the memory associated with a node. Also frees the associated process.
  */
 void free_node(Node *node) {
   free_process(node->process);
@@ -48,11 +48,11 @@ void free_node(Node *node) {
 }
 
 /**
- * Checks whether a queue is empty */
+ * Checks whether a queue is empty. */
 bool empty_queue(PriorityQueue *queue) { return queue->size == 0; }
 
 /**
- * Returns the top node of the queue */
+ * Returns the top node of the queue. */
 Process *top_queue(PriorityQueue *queue) {
   if (!empty_queue(queue))
     return queue->root->process;
@@ -68,7 +68,7 @@ bool higher_node_priority(Node *n1, Node *n2) {
 }
 
 /**
- * Adds a new node to the queue */
+ * Adds a new node to the queue. */
 void push_queue(PriorityQueue *queue, Process *process) {
   Node *new = new_node(process);
 
@@ -96,7 +96,7 @@ void push_queue(PriorityQueue *queue, Process *process) {
 }
 
 /**
- * Removes the top node from the queue */
+ * Removes the top node from the queue. */
 void pop_queue(PriorityQueue *queue) {
   Node *next = queue->root->next;
   free_node(queue->root);
