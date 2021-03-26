@@ -11,6 +11,10 @@
 #define MAX_LEN 100
 
 /**
+ * Splits a process into k subprocesses. */
+void split_process(Process *process, int k, linked_list_t *parallel);
+
+/**
  * Reads the next process into the given buffer. Returns true if there are any
  * errors.
  *
@@ -63,6 +67,8 @@ int main(int argc, char **argv) {
 
   /* tracks whether we've seen all processes in the file */
   bool more_processes = true;
+  /* tracks whether there are any active processes */
+  bool active_processes = false;
   uint32_t proc_left = 0;
   Time time = 0;
 
@@ -78,15 +84,24 @@ int main(int argc, char **argv) {
   /* will need this eventually */
   /* CPU cpus[num_processors];  */
 
+  /* track parallelisable processes */
+  linked_list_t *parallel = new_list();
+
   Process next_process;
   more_processes = read_next_process(processes_file, &next_process);
 
-  while (more_processes || cpu0->active_process || cpu1->active_process) {
+  while (more_processes || active_processes) {
     /* process arrives */
     while (more_processes && time == next_process.arrival) {
-      if (cpu0->remaining_time <= cpu1->remaining_time) {
-        give_process(cpu0, &next_process, time);
+      if (!next_process.parallelisable) {
+        if (cpu0->remaining_time <= cpu1->remaining_time) {
+          give_process(cpu0, &next_process, time);
+        } else {
+          give_process(cpu1, &next_process, time);
+        }
       } else {
+        split_process(&next_process, 2, parallel);
+        give_process(cpu0, &next_process, time);
         give_process(cpu1, &next_process, time);
       }
 
@@ -99,15 +114,19 @@ int main(int argc, char **argv) {
     /* Update this to run on an array of CPUs */
     /* This should be its own function */
     if (cpu0->changed_process) {
-      printf("%d,RUNNING,pid=%d,remaining_time=%d,cpu=%d\n", time,
-             cpu0->active_process->id, cpu0->active_process->remaining_time,
-             cpu0->id);
+      printf("%u,RUNNING,pid=%u", time, cpu0->active_process->id);
+      if (cpu0->active_process->parallelisable)
+        printf(".%d", cpu0->id);
+      printf(",remaining_time=%u,cpu=%d\n",
+             cpu0->active_process->remaining_time, cpu0->id);
       cpu0->changed_process = false;
     }
     if (cpu1->changed_process) {
-      printf("%d,RUNNING,pid=%d,remaining_time=%d,cpu=%d\n", time,
-             cpu1->active_process->id, cpu1->active_process->remaining_time,
-             cpu1->id);
+      printf("%u,RUNNING,pid=%u", time, cpu1->active_process->id);
+      if (cpu1->active_process->parallelisable)
+        printf(".%d", cpu1->id);
+      printf(",remaining_time=%u,cpu=%d\n",
+             cpu1->active_process->remaining_time, cpu1->id);
       cpu1->changed_process = false;
     }
 
@@ -117,47 +136,107 @@ int main(int argc, char **argv) {
     update_cpu(cpu1);
 
     if (cpu0->finished_process) {
-      printf("%d,FINISHED,pid=%d,proc_remaining=%u\n", time,
-             cpu0->active_process->id, proc_left - 1);
-      /* not cpu->queue! should print the total processes left */
+      if (cpu0->active_process->parallelisable) {
+        node_t *node;
+        if (search_list(&node, cpu0->active_process->id, parallel)) {
+          node->count--;
 
-      proc_left--;
+          if (node->count == 0) {
+            /* actually finished */
+            printf("%u,FINISHED,pid=%u,proc_remaining=%u\n", time,
+                   cpu0->active_process->id, proc_left - 1);
 
-      /* calculate performance statistics! */
-      num_processes++;
-      unsigned long turnaround = time - cpu0->active_process->arrival;
-      double overhead =
-          turnaround / (double)cpu0->active_process->execution_time;
+            proc_left--;
 
-      avg_turnaround += (turnaround - avg_turnaround) / num_processes;
-      avg_overhead += (overhead - avg_overhead) / num_processes;
-      if (overhead > max_overhead)
-        max_overhead = overhead;
+            /* calculate performance statistics! */
+            num_processes++;
+            unsigned long turnaround = time - cpu0->active_process->arrival;
+            double overhead =
+                turnaround / (double)cpu0->active_process->execution_time;
 
+            avg_turnaround += (turnaround - avg_turnaround) / num_processes;
+            avg_overhead += (overhead - avg_overhead) / num_processes;
+            if (overhead > max_overhead)
+              max_overhead = overhead;
+          }
+        }
+      } else {
+        printf("%u,FINISHED,pid=%u,proc_remaining=%u\n", time,
+               cpu0->active_process->id, proc_left - 1);
+
+        proc_left--;
+
+        /* calculate performance statistics! */
+        num_processes++;
+        unsigned long turnaround = time - cpu0->active_process->arrival;
+        double overhead =
+            turnaround / (double)cpu0->active_process->execution_time;
+
+        avg_turnaround += (turnaround - avg_turnaround) / num_processes;
+        avg_overhead += (overhead - avg_overhead) / num_processes;
+        if (overhead > max_overhead)
+          max_overhead = overhead;
+      }
+
+      /* assign the next process */
       cpu_next_process(cpu0, time);
 
       cpu0->finished_process = false;
     }
     if (cpu1->finished_process) {
-      printf("%d,FINISHED,pid=%u,proc_remaining=%u\n", time,
-             cpu1->active_process->id, proc_left - 1);
+      if (cpu1->active_process->parallelisable) {
+        node_t *node;
+        if (search_list(&node, cpu1->active_process->id, parallel)) {
+          node->count--;
 
-      proc_left--;
+          if (node->count == 0) {
+            /* actually finished */
+            printf("%u,FINISHED,pid=%u,proc_remaining=%u\n", time,
+                   cpu1->active_process->id, proc_left - 1);
 
-      /* calculate performance statistics */
-      /* how to track parallelised processes??? */
-      num_processes++;
-      unsigned long turnaround = time - cpu1->active_process->arrival;
-      double overhead =
-          turnaround / (double)cpu1->active_process->execution_time;
+            proc_left--;
 
-      avg_turnaround += (turnaround - avg_turnaround) / num_processes;
-      avg_overhead += (overhead - avg_overhead) / num_processes;
-      if (overhead > max_overhead)
-        max_overhead = overhead;
+            /* calculate performance statistics! */
+            num_processes++;
+            unsigned long turnaround = time - cpu1->active_process->arrival;
+            double overhead =
+                turnaround / (double)cpu1->active_process->execution_time;
 
+            avg_turnaround += (turnaround - avg_turnaround) / num_processes;
+            avg_overhead += (overhead - avg_overhead) / num_processes;
+            if (overhead > max_overhead)
+              max_overhead = overhead;
+          }
+        }
+      } else {
+        printf("%u,FINISHED,pid=%u,proc_remaining=%u\n", time,
+               cpu1->active_process->id, proc_left - 1);
+
+        proc_left--;
+
+        /* calculate performance statistics! */
+        num_processes++;
+        unsigned long turnaround = time - cpu1->active_process->arrival;
+        double overhead =
+            turnaround / (double)cpu1->active_process->execution_time;
+
+        avg_turnaround += (turnaround - avg_turnaround) / num_processes;
+        avg_overhead += (overhead - avg_overhead) / num_processes;
+        if (overhead > max_overhead)
+          max_overhead = overhead;
+      }
+
+      /* assign the next process */
       cpu_next_process(cpu1, time);
+
       cpu1->finished_process = false;
+    }
+
+    /* need to scale this to lots of CPUs */
+    if (!cpu0->active_process && !cpu1->active_process) {
+      active_processes = false;
+    } else {
+      active_processes = true;
     }
   }
 
@@ -171,9 +250,17 @@ int main(int argc, char **argv) {
 
   free_cpu(cpu0);
   free_cpu(cpu1);
+  free_list(parallel);
   fclose(processes_file);
 
   return 0;
+}
+
+/**
+ * Splits a process into k subprocesses. */
+void split_process(Process *process, int k, linked_list_t *parallel) {
+  process->remaining_time = ceil(process->execution_time / (double)k) + 1;
+  insert_list_node(process->id, k, parallel);
 }
 
 /**
