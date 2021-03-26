@@ -22,7 +22,9 @@ process.o: process.c process.h
 list.o: list.c list.h
 	gcc -c list.c
 
+.PHONY: clean
+
 clean:
-	rm allocate *.o
+	rm -f allocate *.o
 
 # end
