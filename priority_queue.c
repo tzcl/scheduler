@@ -4,6 +4,24 @@
 #include <stdlib.h>
 
 /**
+ * Initialises the data members of a new Node and allocates memory. */
+Node *new_node(Process *process) {
+  Node *node = (Node *)malloc(sizeof(Node));
+  node->process = copy_process(process);
+  node->next = NULL;
+
+  return node;
+}
+
+/**
+ * Frees the memory associated with a node. Also frees the associated process.
+ */
+void free_node(Node *node) {
+  free_process(node->process);
+  free(node);
+}
+
+/**
  * Initialises the data members of a new queue and allocates memory.
  * */
 PriorityQueue *new_queue() {
@@ -27,24 +45,6 @@ void free_queue(PriorityQueue *queue) {
   }
 
   free(queue);
-}
-
-/**
- * Initialises the data members of a new Node and allocates memory. */
-Node *new_node(Process *process) {
-  Node *node = (Node *)malloc(sizeof(Node));
-  node->process = copy_process(process);
-  node->next = NULL;
-
-  return node;
-}
-
-/**
- * Frees the memory associated with a node. Also frees the associated process.
- */
-void free_node(Node *node) {
-  free_process(node->process);
-  free(node);
 }
 
 /**

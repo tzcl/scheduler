@@ -11,11 +11,11 @@
  *   process: the stored process
  *   next: the next node in the queue
  * */
-struct node {
+typedef struct queue_node Node;
+struct queue_node {
   Process *process;
-  struct node *next;
+  Node *next;
 };
-typedef struct node Node;
 
 /**
  * A priority queue of processes, implemented using a singly-linked list.
@@ -36,15 +36,6 @@ PriorityQueue *new_queue();
 /**
  * Frees the memory associated with a queue */
 void free_queue(PriorityQueue *queue);
-
-/**
- * Initialises the data members of a new node and allocates memory. */
-Node *new_node(Process *process);
-
-/**
- * Frees the memory associated with a node. Also frees the associated process.
- */
-void free_node(Node *node);
 
 /**
  * Checks whether a queue is empty. */

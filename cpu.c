@@ -19,9 +19,6 @@ CPU *new_cpu(int id) {
 
 /** Frees the memory associated with a CPU. */
 void free_cpu(CPU *cpu) {
-  if (cpu->active_process)
-    free_process(cpu->active_process);
-
   free_queue(cpu->queue);
   free(cpu);
 }
