@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "list.h"
 #include "priority_queue.h"
 #include "process.h"
 #include <math.h>
