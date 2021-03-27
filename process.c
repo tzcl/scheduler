@@ -43,7 +43,7 @@ void init_process(Process *process, char *line) {
   process->arrival = arrival;
   process->execution_time = execution_time;
   process->remaining_time = execution_time;
-  process->parallelisable = *parallelisable == 'p';
+  process->parallelisable = *parallelisable == 'p' && execution_time > 1;
 }
 
 /**
