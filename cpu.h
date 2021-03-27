@@ -14,6 +14,7 @@
  *   curr_process: stores the currently running process
  *   changed_process: stores whether the CPU changed process
  *   finished_process: stores whether the CPU finished a process
+ *   print_finished: stores whether the CPU needs to print a FINISHED event
  *   queue: a queue containing waiting processes
  *   remaining_time: the remaining time for all processes
  *  */
@@ -23,6 +24,7 @@ typedef struct {
   Process curr_process;
   bool changed_process;
   bool finished_process;
+  bool print_finished;
   PriorityQueue *queue;
   Time remaining_time;
 } CPU;
