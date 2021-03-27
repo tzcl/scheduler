@@ -78,10 +78,10 @@ void delete_list_node(node_t *node, linked_list_t *list) {
 
   if (node == list->head) {
     list->head = node->next;
-  } else if (node == list->tail) {
+  }
+  if (node == list->tail) {
     list->tail = node->prev;
   }
-
   if (node->prev) {
     node->prev->next = node->next;
   }
