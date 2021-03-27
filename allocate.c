@@ -93,8 +93,10 @@ int main(int argc, char **argv) {
   /* create CPUs */
   /* treat this as a sorted array of CPUs? */
   CPU *cpu_array[num_cpus];
+  CPU *sorted_cpu_array[num_cpus];
   for (int i = 0; i < num_cpus; i++) {
     cpu_array[i] = new_cpu(i);
+    sorted_cpu_array[i] = cpu_array[i];
   }
 
   /* store which CPUs are the most free */
@@ -114,12 +116,7 @@ int main(int argc, char **argv) {
   while (more_processes || active_processes) {
     /* process arrives */
     while (more_processes && time == next_process.arrival) {
-      if (!next_process.parallelisable) {
-        /* give the process to the CPU with the lowest total remaining time */
-        give_process(cpu_array[0], &next_process, time);
-        printf("Assigned pid=%u to CPU=%u\n", next_process.id,
-               cpu_array[0]->id);
-      } else {
+      if (num_cpus > 1 && next_process.parallelisable) {
         /* split the process into k subprocesses where k <= x (and k <= N) */
         int k = next_process.execution_time;
         if (k > num_cpus)
@@ -127,26 +124,18 @@ int main(int argc, char **argv) {
         split_process(&next_process, k, parallel);
         for (int i = 0; i < k; i++) {
           /* assign the subprocesses to the k lowest load processors */
-          give_process(cpu_array[i], &next_process, time);
+          give_process(sorted_cpu_array[i], &next_process, time);
         }
+      } else {
+        /* give the process to the CPU with the lowest total remaining time */
+        give_process(sorted_cpu_array[0], &next_process, time);
       }
 
       /* increase the number of remaining processes */
       proc_left++;
 
       /* sort each CPU by total remaining time */
-      printf("CPU ARRAY BEFORE\n");
-      for (int i = 0; i < num_cpus; i++) {
-        printf("%d: %u ", cpu_array[i]->id, cpu_array[i]->remaining_time);
-      }
-      printf("\n");
-      qsort(&cpu_array, num_cpus, sizeof(CPU *), &compare_cpus);
-      printf("CPU ARRAY AFTER\n");
-      for (int i = 0; i < num_cpus; i++) {
-        printf("%d: %u ", cpu_array[i]->id, cpu_array[i]->remaining_time);
-      }
-      printf("\n");
-      printf("------------------------------\n");
+      qsort(&sorted_cpu_array, num_cpus, sizeof(CPU *), &compare_cpus);
 
       /* read in the next process */
       more_processes = read_next_process(processes_file, &next_process);
@@ -180,24 +169,28 @@ int main(int argc, char **argv) {
       if (cpu->finished_process) {
         Process *proc = cpu->active_process;
 
-        if (proc->parallelisable) {
+        if (num_cpus > 1 && proc->parallelisable) {
           node_t *node;
           if (search_list(&node, proc->id, parallel)) {
             node->count--;
 
             /* still more subprocesses to run, process is not finished */
-            if (node->count > 0)
+            /* don't print anything yet */
+            if (node->count > 0) {
+              /* start the next process on the CPU */
+              cpu_next_process(cpu, time);
+              cpu->finished_process = false;
               continue;
+            }
+
+            /* process is finished, don't need to track subprocesses any more */
+            delete_list_node(node, parallel);
           }
         }
         /* process is finished */
-        printf("%u,FINISHED,pid=%u,proc_remaining=%u\n", time, proc->id,
-               proc_left - 1);
-
-        /* TODO: not calculating proc_left properly */
         proc_left--;
 
-        /* calculate performance statistics! */
+        /* calculate performance statistics */
         num_processes++;
         unsigned long turnaround = time - proc->arrival;
         double overhead = turnaround / (double)proc->execution_time;
@@ -207,13 +200,30 @@ int main(int argc, char **argv) {
         if (overhead > max_overhead)
           max_overhead = overhead;
 
-        /* start the next process on the CPU */
-        cpu_next_process(cpu, time);
         cpu->finished_process = false;
+        cpu->print_finished = true;
       }
     }
 
-    /* need to scale this to lots of CPUs */
+    /* print any FINISHED events */
+    for (int i = 0; i < num_cpus; i++) {
+      CPU *cpu = cpu_array[i];
+      if (cpu->print_finished) {
+        printf("%u,FINISHED,pid=%u,proc_remaining=%u\n", time,
+               cpu->active_process->id, proc_left);
+
+        /* start the next process on the CPU */
+        cpu_next_process(cpu, time);
+        cpu->finished_process = false;
+
+        cpu->print_finished = false;
+      }
+    }
+
+    /* sort each CPU by total remaining time */
+    qsort(&sorted_cpu_array, num_cpus, sizeof(CPU *), &compare_cpus);
+
+    /* check if any CPUs are still running */
     active_processes = false;
     for (int i = 0; i < num_cpus; i++) {
       if (cpu_array[i]->active_process) {
