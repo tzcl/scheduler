@@ -10,6 +10,7 @@ CPU *new_cpu(int id) {
   cpu->active_process = NULL; /* cpu->curr_process is empty */
   cpu->changed_process = false;
   cpu->finished_process = false;
+  cpu->print_finished = false;
   cpu->remaining_time = 0;
 
   cpu->queue = new_queue();
