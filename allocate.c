@@ -194,7 +194,6 @@ int main(int argc, char **argv) {
             node->count--;
 
             /* still more subprocesses to run, process is not finished */
-            /* don't print anything yet */
             if (node->count > 0) {
               /* start the next process on the CPU */
               cpu_next_process(cpu, time);
@@ -264,7 +263,7 @@ int main(int argc, char **argv) {
   avg_overhead = round(avg_overhead * 100) / 100;
   max_overhead = round(max_overhead * 100) / 100;
 
-  printf("Turnaround time %g\n", round(avg_turnaround));
+  printf("Turnaround time %g\n", ceil(avg_turnaround));
   printf("Time overhead %g %g\n", max_overhead, avg_overhead);
   printf("Makespan %d\n", time);
 
