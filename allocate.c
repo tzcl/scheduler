@@ -16,23 +16,31 @@
 void split_process(Process *process, int k, linked_list_t *parallel);
 
 /**
- * Reads the next process into the given buffer. Returns true if there are any
- * errors.
+ * Reads in the next process into the given buffer. Returns true if there are
+ * any lines remaining in the input file.
  *
  *  processes_file: a pointer to the processes file
- *  process: the variable to store the process in */
+ *  process: a pointer to the variable to store the process in */
 bool read_next_process(FILE *processes_file, Process *process);
 
 /**
- * Compare CPUs by their total remaining time and break ties using ID. */
-int compare_cpus(const void *a, const void *b) {
-  /* a and b are pointers to pointers to CPUs */
-  CPU *first_cpu = *(CPU **)a;
-  CPU *second_cpu = *(CPU **)b;
+ * Adds the next process to the array of arriving processes.
+ *
+ *  process: a pointer to the next process
+ *  processes: an array to contain the arriving processes
+ *  capacity: the capacity of the processes array
+ *  num_next: the number of arriving processes
+ *  time: the current time of the simulation */
+void add_next_process(Process *process, Process ***processes, int *capacity,
+                      int *num_next);
 
-  return (first_cpu->remaining_time - second_cpu->remaining_time +
-          first_cpu->id - second_cpu->id);
-}
+/**
+ * Compare CPUs by their total remaining time and break ties using ID. */
+int compare_cpus(const void *a, const void *b);
+
+/**
+ * Compare processes by their execution time and break ties using ID. */
+int compare_processes(const void *a, const void *b);
 
 int main(int argc, char **argv) {
   /* Parse arguments
@@ -99,47 +107,58 @@ int main(int argc, char **argv) {
     sorted_cpu_array[i] = cpu_array[i];
   }
 
-  /* store which CPUs are the most free */
-  // TODO: remove?
-  int lowest_cpu_load[num_cpus];
-  for (int i = 0; i < num_cpus; i++) {
-    lowest_cpu_load[i] = i;
-  }
-
   /* track parallelisable processes */
   linked_list_t *parallel = new_list();
 
   /* store processes as they are read in */
+  int capacity = 8, num_next = 0;
+  Process **next_processes = malloc(capacity * sizeof(*next_processes));
+  for (int i = 0; i < capacity; i++) {
+    next_processes[i] = NULL;
+  }
+
+  /* read in next processes */
   Process next_process;
   more_processes = read_next_process(processes_file, &next_process);
+  while (more_processes && next_process.arrival == time) {
+    add_next_process(&next_process, &next_processes, &capacity, &num_next);
+    more_processes = read_next_process(processes_file, &next_process);
+  }
+  /* sort next processes */
+  qsort(next_processes, num_next, sizeof(*next_processes), compare_processes);
 
-  while (more_processes || active_processes) {
-    /* process arrives */
-    while (more_processes && time == next_process.arrival) {
-      if (num_cpus > 1 && next_process.parallelisable) {
+  while (more_processes || active_processes || num_next > 0) {
+    /* processes arrive */
+    for (int i = 0; i < num_next; i++) {
+      Process *proc = next_processes[i];
+
+      if (num_cpus > 1 && proc->parallelisable) {
         /* split the process into k subprocesses where k <= x (and k <= N) */
-        int k = next_process.execution_time;
+        int k = proc->execution_time;
         if (k > num_cpus)
           k = num_cpus;
-        split_process(&next_process, k, parallel);
-        for (int i = 0; i < k; i++) {
+        split_process(proc, k, parallel);
+        for (int j = 0; j < k; j++) {
           /* assign the subprocesses to the k lowest load processors */
-          give_process(sorted_cpu_array[i], &next_process, time);
+          give_process(sorted_cpu_array[j], proc, time);
         }
       } else {
         /* give the process to the CPU with the lowest total remaining time */
-        give_process(sorted_cpu_array[0], &next_process, time);
+        give_process(sorted_cpu_array[0], proc, time);
       }
 
       /* increase the number of remaining processes */
       proc_left++;
 
       /* sort each CPU by total remaining time */
-      qsort(&sorted_cpu_array, num_cpus, sizeof(CPU *), &compare_cpus);
+      qsort(&sorted_cpu_array, num_cpus, sizeof(CPU *), compare_cpus);
 
-      /* read in the next process */
-      more_processes = read_next_process(processes_file, &next_process);
+      /* finished processing */
+      free_process(proc);
     }
+
+    /* reset num_next */
+    num_next = 0;
 
     /* Check if any CPU changed process */
     for (int i = 0; i < num_cpus; i++) {
@@ -220,8 +239,16 @@ int main(int argc, char **argv) {
       }
     }
 
+    /* read in next_processes */
+    while (more_processes && next_process.arrival == time) {
+      add_next_process(&next_process, &next_processes, &capacity, &num_next);
+      more_processes = read_next_process(processes_file, &next_process);
+    }
+    /* sort next processes */
+    qsort(next_processes, num_next, sizeof(*next_processes), compare_processes);
+
     /* sort each CPU by total remaining time */
-    qsort(&sorted_cpu_array, num_cpus, sizeof(CPU *), &compare_cpus);
+    qsort(&sorted_cpu_array, num_cpus, sizeof(CPU *), compare_cpus);
 
     /* check if any CPUs are still running */
     active_processes = false;
@@ -246,6 +273,7 @@ int main(int argc, char **argv) {
   }
 
   free_list(parallel);
+  free(next_processes);
 
   fclose(processes_file);
 
@@ -260,8 +288,8 @@ void split_process(Process *process, int k, linked_list_t *parallel) {
 }
 
 /**
- * Reads the next process into the given buffer. Returns true if there are any
- * errors.
+ * Reads in the next process into the given buffer. Returns true if there are
+ * any lines remaining in the input file.
  *
  *  processes_file: a pointer to the processes file
  *  process: the variable to store the process in */
@@ -272,4 +300,50 @@ bool read_next_process(FILE *processes_file, Process *process) {
   }
   init_process(process, &buffer[0]);
   return true;
+}
+
+/**
+ * Adds the next process to the array of arriving processes.
+ *
+ *  process: a pointer to the next process
+ *  processes: an array to contain the arriving processes
+ *  capacity: the capacity of the processes array
+ *  num_next: the number of arriving processes
+ *  time: the current time of the simulation */
+void add_next_process(Process *process, Process ***processes, int *capacity,
+                      int *num_next) {
+  if (*num_next == *capacity) {
+    /* need to expand array */
+    *capacity *= 2;
+    *processes = realloc(*processes, *capacity * sizeof(**processes));
+    assert(processes);
+    for (int i = *num_next; i < *capacity; i++) {
+      (*processes)[i] = NULL;
+    }
+  }
+  /* insert the new process */
+  (*processes)[*num_next] = copy_process(process);
+  (*num_next)++;
+}
+
+/**
+ * Compare CPUs by their total remaining time and break ties using ID. */
+int compare_cpus(const void *a, const void *b) {
+  /* a and b are pointers to pointers to CPUs */
+  CPU *first_cpu = *(CPU **)a;
+  CPU *second_cpu = *(CPU **)b;
+
+  return (first_cpu->remaining_time - second_cpu->remaining_time +
+          first_cpu->id - second_cpu->id);
+}
+
+/**
+ * Compare processes by their execution time and break ties using ID. */
+int compare_processes(const void *a, const void *b) {
+  /* a and b are pointers to pointers to processes */
+  Process *first_proc = *(Process **)a;
+  Process *second_proc = *(Process **)b;
+
+  return (first_proc->execution_time - second_proc->execution_time +
+          first_proc->id - second_proc->id);
 }
