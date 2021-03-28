@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
    *   -f filename: specify the name of the file describing the processes
    *   -p processors: specifies the number of processors, where 1 <= N <= 1024
    *   -c: an optional parameter which invokes my custom scheduler */
-  bool use_custom_scheduler = false;
+  bool custom_scheduler = false;
   int num_cpus = 1;
   char *filename = NULL;
 
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
       num_cpus = atoi(optarg);
       break;
     case 'c':
-      use_custom_scheduler = true;
+      custom_scheduler = true;
       break;
     case '?':
       fprintf(stderr, "Usage: %s -%c requires an argument!\n", argv[0], optopt);
@@ -99,7 +99,6 @@ int main(int argc, char **argv) {
   double max_overhead = 0;
 
   /* create CPUs */
-  /* treat this as a sorted array of CPUs? */
   CPU *cpu_array[num_cpus];
   CPU *sorted_cpu_array[num_cpus];
   for (int i = 0; i < num_cpus; i++) {
@@ -153,11 +152,11 @@ int main(int argc, char **argv) {
       /* sort each CPU by total remaining time */
       qsort(&sorted_cpu_array, num_cpus, sizeof(CPU *), compare_cpus);
 
-      /* finished processing */
+      /* finished with the process */
       free_process(proc);
     }
 
-    /* reset num_next */
+    /* reset the number of arriving processes */
     num_next = 0;
 
     /* Check if any CPU changed process */
