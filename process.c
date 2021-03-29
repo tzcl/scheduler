@@ -75,11 +75,3 @@ bool higher_priority(Process *p1, Process *p2) {
 
   return p1->remaining_time < p2->remaining_time;
 }
-
-// TODO: delete
-// This is for testing at this stage (eventually I will need to print output)
-void print_process(Process *process) {
-  printf("Process (%c): %d arrived at %d and has %d remaining (%d)\n",
-         process->parallelisable ? 'p' : 'n', process->id, process->arrival,
-         process->remaining_time, process->execution_time);
-}

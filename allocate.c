@@ -111,25 +111,26 @@ int main(int argc, char **argv) {
 
   /* store processes as they are read in */
   int capacity = 8, num_next = 0;
-  Process **next_processes = malloc(capacity * sizeof(*next_processes));
+  Process **arriving_processes = malloc(capacity * sizeof(*arriving_processes));
   for (int i = 0; i < capacity; i++) {
-    next_processes[i] = NULL;
+    arriving_processes[i] = NULL;
   }
 
-  /* read in next processes */
+  /* read in arriving processes */
   Process next_process;
   more_processes = read_next_process(processes_file, &next_process);
   while (more_processes && next_process.arrival == time) {
-    add_next_process(&next_process, &next_processes, &capacity, &num_next);
+    add_next_process(&next_process, &arriving_processes, &capacity, &num_next);
     more_processes = read_next_process(processes_file, &next_process);
   }
-  /* sort next processes */
-  qsort(next_processes, num_next, sizeof(*next_processes), compare_processes);
+  /* sort arriving processes */
+  qsort(arriving_processes, num_next, sizeof(*arriving_processes),
+        compare_processes);
 
   while (more_processes || active_processes || num_next > 0) {
     /* processes arrive */
     for (int i = 0; i < num_next; i++) {
-      Process *proc = next_processes[i];
+      Process *proc = arriving_processes[i];
 
       if (num_cpus > 1 && proc->parallelisable) {
         /* split the process into k subprocesses where k <= x (and k <= N) */
@@ -239,11 +240,13 @@ int main(int argc, char **argv) {
 
     /* read in next_processes */
     while (more_processes && next_process.arrival == time) {
-      add_next_process(&next_process, &next_processes, &capacity, &num_next);
+      add_next_process(&next_process, &arriving_processes, &capacity,
+                       &num_next);
       more_processes = read_next_process(processes_file, &next_process);
     }
     /* sort next processes */
-    qsort(next_processes, num_next, sizeof(*next_processes), compare_processes);
+    qsort(arriving_processes, num_next, sizeof(*arriving_processes),
+          compare_processes);
 
     /* sort each CPU by total remaining time */
     qsort(&sorted_cpu_array, num_cpus, sizeof(CPU *), compare_cpus);
@@ -271,7 +274,7 @@ int main(int argc, char **argv) {
   }
 
   free_list(parallel);
-  free(next_processes);
+  free(arriving_processes);
 
   fclose(processes_file);
 

@@ -1,8 +1,6 @@
 ##
 # COMP30023 Project 1
 #
-# @file
-# @version 0.1
 
 allocate: allocate.o process.o priority_queue.o cpu.o list.o
 	gcc -o allocate allocate.o process.o priority_queue.o cpu.o list.o -Wall -lm

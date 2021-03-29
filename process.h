@@ -69,8 +69,4 @@ void free_process(Process *process);
  * Returns true if p1 has higher priority than p2 and vice versa. */
 bool higher_priority(Process *p1, Process *p2);
 
-// TODO: delete
-// This is for testing at this stage (eventually I will need to print output)
-void print_process(Process *process);
-
 #endif // __PROCESS_H_

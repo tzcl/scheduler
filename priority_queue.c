@@ -103,15 +103,3 @@ void pop_queue(PriorityQueue *queue) {
   queue->root = next;
   queue->size--;
 }
-
-// TODO: delete
-void print_queue(PriorityQueue *queue) {
-  Node *curr = queue->root;
-
-  while (curr) {
-    printf("%d: %d; ", curr->process->id, curr->process->remaining_time);
-    curr = curr->next;
-  }
-
-  printf("\n");
-}

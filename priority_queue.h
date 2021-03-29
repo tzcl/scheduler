@@ -53,7 +53,4 @@ void push_queue(PriorityQueue *queue, Process *process);
  * Removes the top node from the queue. */
 void pop_queue(PriorityQueue *queue);
 
-// TODO: delete
-void print_queue(PriorityQueue *queue);
-
 #endif // __PRIORITY_QUEUE_H_

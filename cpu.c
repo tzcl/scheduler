@@ -7,7 +7,7 @@
 CPU *new_cpu(int id) {
   CPU *cpu = (CPU *)malloc(sizeof(CPU));
   cpu->id = id;
-  cpu->active_process = NULL; /* cpu->curr_process is empty */
+  cpu->active_process = NULL;
   cpu->changed_process = false;
   cpu->finished_process = false;
   cpu->print_finished = false;

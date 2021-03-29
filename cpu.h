@@ -12,9 +12,9 @@
  *   id: the CPU id
  *   active_process: the currently running process
  *   curr_process: stores the currently running process
- *   changed_process: stores whether the CPU changed process
- *   finished_process: stores whether the CPU finished a process
- *   print_finished: stores whether the CPU needs to print a FINISHED event
+ *   changed_process: whether the CPU changed process
+ *   finished_process: whether the CPU finished a process
+ *   print_finished: whether the CPU needs to print a FINISHED event
  *   queue: a queue containing waiting processes
  *   remaining_time: the remaining time for all processes
  *  */
